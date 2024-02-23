@@ -6,7 +6,7 @@
 //  Make sure we emit in correct endianness.
 	
 // CHECK: Contents of section .data
-// CHECK-NEXT:  0000 12341234 1234 
+// CHECK-NEXT:  0000 12341234 1234
 
 	.syntax unified
         .text

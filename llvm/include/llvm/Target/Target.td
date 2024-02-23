@@ -951,6 +951,8 @@ class AsmOperandClass {
   /// Optional arguments must be at the end of the operand list.
   bit IsOptional = false;
 
+  bit OptionalShouldOfsetCustomParsers = true;
+
   /// The name of the method on the target specific asm parser that returns the
   /// default operand for this optional operand. This method is only used if
   /// IsOptional == 1. If not set, this will default to "defaultFooOperands",
@@ -1724,6 +1726,11 @@ class Target {
   // setting hasExtraDefRegAllocReq and hasExtraSrcRegAllocReq to 1
   // for all opcodes if this flag is set to 0.
   int AllowRegisterRenaming = 0;
+
+  // SortBySize = Should the assembly matcher prefer the smaller
+  // instructions. 1 if the instruction set should sort by size,
+  // 0 otherwise.
+  int SortBySize = 0;
 }
 
 //===----------------------------------------------------------------------===//

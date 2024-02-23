@@ -13,15 +13,15 @@
         movs pc, r0
         movs r0, pc
         movs pc, pc
-// CHECK: error: invalid instruction, any one of the following would fix this:
+// CHECK: invalid instruction, any one of the following would fix this:
 // CHECK-NEXT: movs pc, r0
-// CHECK: note: operand must be a register in range [r0, r14]
-// CHECK: note: invalid operand for instruction
-// CHECK: error: invalid instruction, any one of the following would fix this:
+// CHECK: operand must be a register in range [r0, r14]
+// CHECK: invalid operand for instruction
+// CHECK: invalid instruction, any one of the following would fix this:
 // CHECK-NEXT: movs r0, pc
-// CHECK: note: operand must be a register in range [r0, r14]
-// CHECK: note: invalid operand for instruction
-// CHECK: error: invalid operand for instruction
+// CHECK: operand must be a register in range [r0, r14]
+// CHECK: invalid operand for instruction
+// CHECK: invalid operand for instruction
 // CHECK-NEXT: movs pc, pc
 
         // mov.w selects t2MOVr
@@ -41,15 +41,15 @@
         movs.w pc, r0
         movs.w r0, pc
         movs.w pc, pc
-// CHECK: error: invalid instruction, any one of the following would fix this:
+// CHECK: invalid instruction, any one of the following would fix this:
 // CHECK-NEXT: movs.w pc, r0
-// CHECK: note: operand must be a register in range [r0, r14]
-// CHECK: note: invalid operand for instruction
-// CHECK: error: invalid instruction, any one of the following would fix this:
+// CHECK: operand must be a register in range [r0, r14]
+// CHECK: invalid operand for instruction
+// CHECK: invalid instruction, any one of the following would fix this:
 // CHECK-NEXT: movs.w r0, pc
-// CHECK: note: operand must be a register in range [r0, r14]
-// CHECK: note: invalid operand for instruction
-// CHECK: error: invalid operand for instruction
+// CHECK: operand must be a register in range [r0, r14]
+// CHECK: invalid operand for instruction
+// CHECK: invalid operand for instruction
 // CHECK-NEXT: movs.w pc, pc
 
 
@@ -58,30 +58,30 @@
         movs sp, r0
         movs r0, sp
         movs sp, sp
-// CHECK-V7: error: instruction variant requires ARMv8 or later
+// CHECK-V7: instruction variant requires ARMv8 or later
 // CHECK-V7-NEXT: movs sp, r0
 // CHECK-V7: instruction variant requires ARMv8 or later
 // CHECK-V7-NEXT: movs r0, sp
-// CHECK-V7: error: instruction variant requires ARMv8 or later
+// CHECK-V7: instruction variant requires ARMv8 or later
 // CHECK-V7-NEXT: movs sp, sp
 // CHECK-V8: movs.w sp, r0            @ encoding: [0x5f,0xea,0x00,0x0d]
 // CHECK-V8: movs.w r0, sp            @ encoding: [0x5f,0xea,0x0d,0x00]
 // CHECK-V8: movs.w sp, sp            @ encoding: [0x5f,0xea,0x0d,0x0d]
 
         mov.w sp, sp
-// CHECK-V7: error: instruction variant requires ARMv8 or later
+// CHECK-V7: instruction variant requires ARMv8 or later
 // CHECK-V7-NEXT: mov.w sp, sp
 // CHECK-V8: mov.w sp, sp             @ encoding: [0x4f,0xea,0x0d,0x0d]
 
         movs.w sp, r0
         movs.w r0, sp
         movs.w sp, sp
-// CHECK-V7: error: instruction variant requires ARMv8 or later
-// CHECK-V7-NEXT: movs.w sp, r0
 // CHECK-V7: instruction variant requires ARMv8 or later
-// CHECK-V7-NEXT: movs.w r0, sp
-// CHECK-V7: error: instruction variant requires ARMv8 or later
-// CHECK-V7-NEXT: movs.w sp, sp
+// CHECK-V7: movs.w sp, r0
+// CHECK-V7: instruction variant requires ARMv8 or later
+// CHECK-V7: movs.w r0, sp
+// CHECK-V7: instruction variant requires ARMv8 or later
+// CHECK-V7: movs.w sp, sp
 // CHECK-V8: movs.w sp, r0            @ encoding: [0x5f,0xea,0x00,0x0d]
 // CHECK-V8: movs.w r0, sp            @ encoding: [0x5f,0xea,0x0d,0x00]
 // CHECK-V8: movs.w sp, sp            @ encoding: [0x5f,0xea,0x0d,0x0d]

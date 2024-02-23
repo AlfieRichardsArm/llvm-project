@@ -28,7 +28,7 @@
 @ CHECK-ERRORS:         ^
 @ CHECK-ERRORS: note: instruction variant requires Thumb2
 @ CHECK-ERRORS: note: operand must be a register sp
-@ CHECK-ERRORS-V5: error: instruction variant requires ARMv6 or later
+@ CHECK-ERRORS-V5: note: instruction variant requires ARMv6 or later
 @ CHECK-ERRORS-V5:         mov r2, r3
 @ CHECK-ERRORS-V5:         ^
 
@@ -225,7 +225,7 @@
 
 @ Mismatched source/destination operands for MUL instruction.
         muls r1, r2, r3
-@ CHECK-ERRORS: error: destination register must match source register
+@ CHECK-ERRORS: note: destination register must match a source register
 @ CHECK-ERRORS:         muls r1, r2, r3
 @ CHECK-ERRORS:              ^
 
@@ -274,16 +274,19 @@
 @ CHECK-ERRORS: error: invalid instruction, any one of the following would fix this:
 @ CHECK-ERRORS: add sp, #-1
 @ CHECK-ERRORS: ^
+@ CHECK-ERRORS: note: instruction requires: thumb2
+@ CHECK-ERRORS: add sp, #-1
+@ CHECK-ERRORS: ^
 @ CHECK-ERRORS: note: operand must be a register in range [r0, r15]
 @ CHECK-ERRORS: add sp, #-1
 @ CHECK-ERRORS:         ^
 @ CHECK-ERRORS: note: invalid operand for instruction
 @ CHECK-ERRORS: add sp, #-1
 @ CHECK-ERRORS:         ^
-@ CHECK-ERRORS: note: instruction requires: thumb2
-@ CHECK-ERRORS: add sp, #-1
-@ CHECK-ERRORS: ^
 @ CHECK-ERRORS: error: invalid instruction, any one of the following would fix this:
+@ CHECK-ERRORS: add sp, #3
+@ CHECK-ERRORS: ^
+@ CHECK-ERRORS: note: instruction requires: thumb2
 @ CHECK-ERRORS: add sp, #3
 @ CHECK-ERRORS: ^
 @ CHECK-ERRORS: note: operand must be a register in range [r0, r15]
@@ -292,10 +295,10 @@
 @ CHECK-ERRORS: note: invalid operand for instruction
 @ CHECK-ERRORS: add sp, #3
 @ CHECK-ERRORS:         ^
-@ CHECK-ERRORS: note: instruction requires: thumb2
-@ CHECK-ERRORS: add sp, #3
-@ CHECK-ERRORS: ^
 @ CHECK-ERRORS: error: invalid instruction, any one of the following would fix this:
+@ CHECK-ERRORS: add sp, sp, #512
+@ CHECK-ERRORS: ^
+@ CHECK-ERRORS: note: instruction requires: thumb2
 @ CHECK-ERRORS: add sp, sp, #512
 @ CHECK-ERRORS: ^
 @ CHECK-ERRORS: note: operand must be a register in range [r0, r15]
@@ -305,9 +308,6 @@
 @ CHECK-ERRORS: add sp, sp, #512
 @ CHECK-ERRORS:             ^
 @ CHECK-ERRORS: note: instruction requires: thumb2
-@ CHECK-ERRORS: add sp, sp, #512
-@ CHECK-ERRORS: ^
-@ CHECK-ERRORS: error: instruction requires: thumb2
 @ CHECK-ERRORS: add r2, sp, #1024
 @ CHECK-ERRORS: ^
         add r2, sp, ip
@@ -407,7 +407,7 @@
         adds
         adds r0
 @ CHECK-ERRORS: error: too few operands for instruction
-@ CHECK-ERRORS: error: too few operands for instruction
+@ CHECK-ERRORS: note: too few operands for instruction
 
 @------------------------------------------------------------------------------
 @ Out of range width for SBFX/UBFX

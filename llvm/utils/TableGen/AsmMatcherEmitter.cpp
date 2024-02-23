@@ -107,6 +107,7 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -215,6 +216,9 @@ struct ClassInfo {
 
   /// Is this operand optional and not always required.
   bool IsOptional;
+
+  /// Should this optional offset custom parsers.
+  bool OptionalShouldOfsetCustomParsers;
 
   /// DefaultMethod - The name of the method that returns the default operand
   /// for optional operand
@@ -502,6 +506,8 @@ struct MatchableInfo {
   /// matchable came from.
   Record *const TheDef;
 
+  unsigned ResInstSize;
+
   /// DefRec - This is the definition that it came from.
   PointerUnion<const CodeGenInstruction *, const CodeGenInstAlias *> DefRec;
 
@@ -543,10 +549,12 @@ struct MatchableInfo {
 
   MatchableInfo(const CodeGenInstruction &CGI)
       : AsmVariantID(0), AsmString(CGI.AsmString), TheDef(CGI.TheDef),
-        DefRec(&CGI), UseInstAsmMatchConverter(true) {}
+        ResInstSize(TheDef->getValueAsInt("Size")), DefRec(&CGI),
+        UseInstAsmMatchConverter(true) {}
 
   MatchableInfo(std::unique_ptr<const CodeGenInstAlias> Alias)
       : AsmVariantID(0), AsmString(Alias->AsmString), TheDef(Alias->TheDef),
+        ResInstSize(Alias->ResultInst->TheDef->getValueAsInt("Size")),
         DefRec(Alias.release()), UseInstAsmMatchConverter(TheDef->getValueAsBit(
                                      "UseInstAsmMatchConverter")) {}
 
@@ -609,10 +617,17 @@ struct MatchableInfo {
   void buildAliasResultOperands(bool AliasConstraintsAreChecked);
 
   /// operator< - Compare two matchables.
-  bool operator<(const MatchableInfo &RHS) const {
+  bool comp(const MatchableInfo &RHS, const CodeGenTarget &Target) const {
     // The primary comparator is the instruction mnemonic.
     if (int Cmp = Mnemonic.compare_insensitive(RHS.Mnemonic))
       return Cmp == -1;
+
+    // Sort by the resultant instuctions size, eg. for ARM instructions
+    // we must choose the smallest matching instruction.
+    if (Target.getSortBySize()) {
+      if (ResInstSize != RHS.ResInstSize)
+        return ResInstSize < RHS.ResInstSize;
+    }
 
     if (AsmOperands.size() != RHS.AsmOperands.size())
       return AsmOperands.size() < RHS.AsmOperands.size();
@@ -652,7 +667,8 @@ struct MatchableInfo {
   /// couldMatchAmbiguouslyWith - Check whether this matchable could
   /// ambiguously match the same set of operands as \p RHS (without being a
   /// strictly superior match).
-  bool couldMatchAmbiguouslyWith(const MatchableInfo &RHS) const {
+  bool couldMatchAmbiguouslyWith(const MatchableInfo &RHS,
+                                 const CodeGenTarget &Target) const {
     // The primary comparator is the instruction mnemonic.
     if (Mnemonic != RHS.Mnemonic)
       return false;
@@ -660,6 +676,13 @@ struct MatchableInfo {
     // Different variants can't conflict.
     if (AsmVariantID != RHS.AsmVariantID)
       return false;
+
+    // Sort by the resultant instuctions size, eg. for ARM instructions
+    // we must choose the smallest matching instruction.
+    if (Target.getSortBySize()) {
+      if (ResInstSize != RHS.ResInstSize)
+        return false;
+    }
 
     // The number of operands is unambiguous.
     if (AsmOperands.size() != RHS.AsmOperands.size())
@@ -1433,6 +1456,11 @@ void AsmMatcherInfo::buildOperandClasses() {
     if (BitInit *BI = dyn_cast<BitInit>(IsOptional))
       CI->IsOptional = BI->getValue();
 
+    Init *OptionalShouldOfsetCustomParsers =
+        Rec->getValueInit("OptionalShouldOfsetCustomParsers");
+    if (BitInit *BI = dyn_cast<BitInit>(OptionalShouldOfsetCustomParsers))
+      CI->OptionalShouldOfsetCustomParsers = BI->getValue();
+
     // Get or construct the default method name.
     Init *DMName = Rec->getValueInit("DefaultMethod");
     if (StringInit *SI = dyn_cast<StringInit>(DMName)) {
@@ -1474,7 +1502,7 @@ void AsmMatcherInfo::buildOperandMatchInfo() {
         OperandMask |= maskTrailingOnes<unsigned>(NumOptionalOps + 1)
                        << (i - NumOptionalOps);
       }
-      if (Op.Class->IsOptional)
+      if (Op.Class->IsOptional && Op.Class->OptionalShouldOfsetCustomParsers)
         ++NumOptionalOps;
     }
 
@@ -2019,7 +2047,7 @@ emitConvertFuncs(CodeGenTarget &Target, StringRef ClassName,
   CvtOS
       << "                              std::begin(TiedAsmOperandTable)) &&\n";
   CvtOS << "             \"Tied operand not found\");\n";
-  CvtOS << "      unsigned TiedResOpnd = TiedAsmOperandTable[OpIdx][0];\n";
+  CvtOS << "      unsigned TiedResOpnd = TiedAsmOperandTable[*(p + 1)][0];\n";
   CvtOS << "      if (TiedResOpnd != (uint8_t)-1)\n";
   CvtOS << "        Inst.addOperand(Inst.getOperand(TiedResOpnd));\n";
   CvtOS << "      break;\n";
@@ -3226,10 +3254,11 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
   // Sort the instruction table using the partial order on classes. We use
   // stable_sort to ensure that ambiguous instructions are still
   // deterministically ordered.
-  llvm::stable_sort(
-      Info.Matchables,
-      [](const std::unique_ptr<MatchableInfo> &a,
-         const std::unique_ptr<MatchableInfo> &b) { return *a < *b; });
+  llvm::stable_sort(Info.Matchables,
+                    [&Target](const std::unique_ptr<MatchableInfo> &a,
+                              const std::unique_ptr<MatchableInfo> &b) {
+                      return a->comp(*b, Target);
+                    });
 
 #ifdef EXPENSIVE_CHECKS
   // Verify that the table is sorted and operator < works transitively.
@@ -3255,7 +3284,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
         const MatchableInfo &A = **I;
         const MatchableInfo &B = **J;
 
-        if (A.couldMatchAmbiguouslyWith(B)) {
+        if (A.couldMatchAmbiguouslyWith(B, Target)) {
           errs() << "warning: ambiguous matchables:\n";
           A.dump();
           errs() << "\nis incomparable with:\n";
@@ -3730,6 +3759,9 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
     OS << "        } else {\n";
     OS << "          DEBUG_WITH_TYPE(\"asm-matcher\", dbgs() << \"but formal "
           "operand not required\\n\");\n";
+    OS << "          if (isSubclass(Formal, OptionalMatchClass)) {\n";
+    OS << "            OptionalOperandsMask.set(FormalIdx);\n";
+    OS << "          }\n";
     OS << "        }\n";
     OS << "        continue;\n";
   } else {

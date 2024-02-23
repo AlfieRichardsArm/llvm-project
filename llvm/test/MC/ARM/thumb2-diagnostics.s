@@ -156,7 +156,7 @@ foo2:
         adds
         adds r0
 @ CHECK-ERRORS: error: too few operands for instruction
-@ CHECK-ERRORS: error: too few operands for instruction
+@ CHECK-ERRORS: note: too few operands for instruction
 
         tst sp, #3
         tst sp, r5
