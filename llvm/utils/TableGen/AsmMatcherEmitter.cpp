@@ -3264,6 +3264,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
   AsmMatcherInfo Info(AsmParser, Target, Records);
   Info.buildInfo();
 
+  LLVM_DEBUG(dbgs() << "BEFORE SORT");
   for (unsigned I = 0; I < Info.Matchables.size(); ++I) {
     LLVM_DEBUG(Info.Matchables[I]->dump());
   }
@@ -3287,6 +3288,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
   }
 #endif
 
+  LLVM_DEBUG(dbgs() << "AFTER SORT");
   DEBUG_WITH_TYPE("instruction_info", {
     for (const auto &MI : Info.Matchables)
       MI->dump();
