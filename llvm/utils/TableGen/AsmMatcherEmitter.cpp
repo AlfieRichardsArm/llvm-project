@@ -1712,7 +1712,7 @@ void AsmMatcherInfo::buildInfo() {
     FromClass->SuperClasses.push_back(ToClass);
   }
 
-  // Reorder classes so that classes precede super classes.
+  // Reorder classes so that classes precede super classes (stable).
   Classes.sort();
 
 #ifdef EXPENSIVE_CHECKS
@@ -3478,7 +3478,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
       FeatureBitsets.back().push_back(MI->RequiredFeatures[I]->TheDef);
   }
 
-  llvm::sort(FeatureBitsets, [&](const std::vector<Record *> &A,
+  llvm::stable_sort(FeatureBitsets, [&](const std::vector<Record *> &A,
                                  const std::vector<Record *> &B) {
     if (A.size() < B.size())
       return true;

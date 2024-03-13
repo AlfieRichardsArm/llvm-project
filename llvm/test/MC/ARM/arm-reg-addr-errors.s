@@ -27,7 +27,7 @@ ldr r4, [r3], q12
 ldr r4, [r3], cpsr
 @ CHECK: [[@LINE-1]]{{.*}} invalid operand for instruction
 add r3, r0, s1, lsl #2
-@ CHECK: [[@LINE-1]]{{.*}} too many operands for instruction
+@ CHECK: [[@LINE-1]]{{.*}} too many operands for instructionblah
 add r3, r0, d1, lsl #2
 @ CHECK: [[@LINE-1]]{{.*}} too many operands for instruction
 add r3, r0, q1, lsl #2
