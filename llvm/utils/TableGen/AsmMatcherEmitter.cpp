@@ -857,6 +857,8 @@ LLVM_DUMP_METHOD void MatchableInfo::dump() const {
     errs() << "  op[" << i << "] = " << Op.Class->ClassName << " - ";
     errs() << '\"' << Op.Token << "\"\n";
   }
+
+  errs() << "Size: " << ResInstSize << "\n";
 }
 #endif
 
