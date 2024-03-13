@@ -3264,6 +3264,10 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
   AsmMatcherInfo Info(AsmParser, Target, Records);
   Info.buildInfo();
 
+  for (unsigned I = 0; I < Info.Matchables.size(); ++I) {
+    LLVM_DEBUG(Info.Matchables[I]->dump());
+  }
+
   // Sort the instruction table using the partial order on classes. We use
   // stable_sort to ensure that ambiguous instructions are still
   // deterministically ordered.
