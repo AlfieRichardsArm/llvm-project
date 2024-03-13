@@ -504,7 +504,7 @@ struct MatchableInfo {
   Record *const TheDef;
 
   // ResInstSize - The size of the resulting instruction for this matchable.
-  unsigned ResInstSize;
+  int64_t ResInstSize;
 
   /// DefRec - This is the definition that it came from.
   PointerUnion<const CodeGenInstruction *, const CodeGenInstAlias *> DefRec;
